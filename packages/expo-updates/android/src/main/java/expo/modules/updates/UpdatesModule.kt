@@ -17,11 +17,12 @@ import expo.modules.updates.logging.UpdatesErrorCode
 import expo.modules.updates.logging.UpdatesLogEntry
 import expo.modules.updates.logging.UpdatesLogReader
 import expo.modules.updates.logging.UpdatesLogger
+import expo.modules.updates.manifest.ManifestMetadata
 import java.util.Date
 
 // these unused imports must stay because of versioning
 /* ktlint-disable no-unused-imports */
-import expo.modules.updates.UpdatesConfiguration
+
 /* ktlint-enable no-unused-imports */
 
 /**
@@ -140,7 +141,7 @@ class UpdatesModule(
         return
       }
       val databaseHolder = updatesServiceLocal.databaseHolder
-      val extraHeaders = FileDownloader.getExtraHeaders(
+      val extraHeaders = FileDownloader.getExtraHeadersForRemoteUpdateRequest(
         databaseHolder.database,
         updatesServiceLocal.configuration,
         updatesServiceLocal.launchedUpdate,
@@ -297,6 +298,50 @@ class UpdatesModule(
         "ERR_UPDATES_FETCH",
         "The updates module controller has not been properly initialized. If you're using a development client, you cannot fetch updates. Otherwise, make sure you have called the native method UpdatesController.initialize()."
       )
+    }
+  }
+
+  @ExpoMethod
+  fun getExtraClientParamsAsync(promise: Promise) {
+    val updatesServiceLocal = updatesService
+    if (!updatesServiceLocal!!.configuration.isEnabled) {
+      promise.reject(
+        "ERR_UPDATES_DISABLED",
+        "You cannot get extra client params when expo-updates is not enabled."
+      )
+      return
+    }
+
+    AsyncTask.execute {
+      val databaseHolder = updatesServiceLocal.databaseHolder
+      promise.resolve(
+        ManifestMetadata.getExtraClientParams(
+          databaseHolder.database,
+          updatesServiceLocal.configuration,
+        )
+      )
+    }
+  }
+
+  @ExpoMethod
+  fun setExtraClientParamsAsync(extraClientParams: Map<String, String>, promise: Promise) {
+    val updatesServiceLocal = updatesService
+    if (!updatesServiceLocal!!.configuration.isEnabled) {
+      promise.reject(
+        "ERR_UPDATES_DISABLED",
+        "You cannot set extra client params when expo-updates is not enabled."
+      )
+      return
+    }
+
+    AsyncTask.execute {
+      val databaseHolder = updatesServiceLocal.databaseHolder
+      ManifestMetadata.saveExtraClientParams(
+        databaseHolder.database,
+        updatesServiceLocal.configuration,
+        extraClientParams
+      )
+      promise.resolve(null)
     }
   }
 

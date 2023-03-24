@@ -58,6 +58,7 @@ public final class UpdatesDatabase: NSObject {
   private static let ManifestFiltersKey = "manifestFilters"
   private static let ServerDefinedHeadersKey = "serverDefinedHeaders"
   private static let StaticBuildDataKey = "staticBuildData"
+  private static let ExtraClientParmasKey = "extraClientParams"
 
   public let databaseQueue: DispatchQueue
   private var db: OpaquePointer?
@@ -525,6 +526,10 @@ public final class UpdatesDatabase: NSObject {
     return try jsonData(withKey: UpdatesDatabase.StaticBuildDataKey, scopeKey: scopeKey)
   }
 
+  public func extraClientParams(withScopeKey scopeKey: String) throws -> [String: String]? {
+    return try jsonData(withKey: UpdatesDatabase.ExtraClientParmasKey, scopeKey: scopeKey) as? [String: String]
+  }
+
   public func setServerDefinedHeaders(_ serverDefinedHeaders: [String: Any], withScopeKey scopeKey: String) throws {
     return try setJsonData(serverDefinedHeaders, withKey: UpdatesDatabase.ServerDefinedHeadersKey, scopeKey: scopeKey, isInTransaction: false)
   }
@@ -535,6 +540,13 @@ public final class UpdatesDatabase: NSObject {
 
   public func setStaticBuildData(_ staticBuildData: [String: Any], withScopeKey scopeKey: String) throws {
     return try setJsonData(staticBuildData, withKey: UpdatesDatabase.StaticBuildDataKey, scopeKey: scopeKey, isInTransaction: false)
+  }
+
+  public func setExtraClientParams(_ extraClientParams: [String: String], withScopeKey scopeKey: String) throws {
+    // ensure that this can be serialized to a structured-header dictionary
+    // this will throw for invalid values
+    _ = try StringStringDictionarySerializer.serialize(dictionary: extraClientParams)
+    return try setJsonData(extraClientParams, withKey: UpdatesDatabase.ExtraClientParmasKey, scopeKey: scopeKey, isInTransaction: false)
   }
 
   internal func setMetadata(withResponseHeaderData responseHeaderData: ResponseHeaderData, scopeKey: String) throws {

@@ -1,10 +1,12 @@
 package expo.modules.updates.manifest
 
 import android.util.Log
+import expo.modules.jsonutils.require
+import expo.modules.structuredheaders.Dictionary
+import expo.modules.structuredheaders.StringItem
 import expo.modules.updates.UpdatesConfiguration
 import expo.modules.updates.db.UpdatesDatabase
 import org.json.JSONObject
-import java.util.*
 
 /**
  * Utility methods for reading and writing JSON metadata from manifests (e.g. `serverDefinedHeaders`
@@ -13,6 +15,7 @@ import java.util.*
 object ManifestMetadata {
   private val TAG = ManifestMetadata::class.java.simpleName
 
+  private const val EXTRA_CLIENT_PARAMS_KEY = "extraClientParams"
   private const val MANIFEST_SERVER_DEFINED_HEADERS_KEY = "serverDefinedHeaders"
   private const val MANIFEST_FILTERS_KEY = "manifestFilters"
 
@@ -45,6 +48,26 @@ object ManifestMetadata {
     return getJSONObject(MANIFEST_FILTERS_KEY, database, configuration)
   }
 
+  fun getExtraClientParams(
+    database: UpdatesDatabase,
+    configuration: UpdatesConfiguration
+  ): Map<String, String>? {
+    return getJSONObject(EXTRA_CLIENT_PARAMS_KEY, database, configuration)?.asStringStringMap()
+  }
+
+  fun saveExtraClientParams(
+    database: UpdatesDatabase,
+    configuration: UpdatesConfiguration,
+    extraClientParams: Map<String, String>
+  ) {
+    // ensure that this can be serialized to a structured-header dictionary
+    // this will throw for invalid values
+    Dictionary.valueOf(extraClientParams.mapValues { elem -> StringItem.valueOf(elem.value) })
+
+    val extraClientParamsJSONObject = JSONObject(extraClientParams)
+    database.jsonDataDao()!!.setMultipleFields(mapOf(EXTRA_CLIENT_PARAMS_KEY to extraClientParamsJSONObject.toString()), configuration.scopeKey!!)
+  }
+
   fun saveMetadata(
     responseHeaderData: ResponseHeaderData,
     database: UpdatesDatabase,
@@ -59,6 +82,14 @@ object ManifestMetadata {
     }
     if (fieldsToSet.isNotEmpty()) {
       database.jsonDataDao()!!.setMultipleFields(fieldsToSet, configuration.scopeKey!!)
+    }
+  }
+
+  private fun JSONObject.asStringStringMap(): Map<String, String> {
+    return buildMap {
+      this@asStringStringMap.keys().asSequence().forEach { key ->
+        this[key] = this@asStringStringMap.require(key)
+      }
     }
   }
 }

@@ -102,6 +102,25 @@ export declare function reloadAsync(): Promise<void>;
  */
 export declare function checkForUpdateAsync(): Promise<UpdateCheckResult>;
 /**
+ * Retrieves the current extra client params.
+ */
+export declare function getExtraClientParamsAsync(): Promise<{
+    [key: string]: string;
+}>;
+/**
+ * Sets the extra client params. Extra client params are sent in a header of update requests.
+ * The update server may use these params when evaluating logic to determine which update to serve.
+ * EAS Update merges these fields into client params when evaluating channel branch mapping logic.
+ *
+ * @example An app may want to add a feature where users can opt-in to beta updates. In this instance,
+ * extra client params could be set to `{userType: 'beta'}`, and then the server can use this information
+ * when deciding which update to serve. If using EAS Update, the channel branch mapping can be set to
+ * discriminate branches based on the `userType`.
+ */
+export declare function setExtraClientParamsAsync(extraClientParams: {
+    [key: string]: string;
+}): Promise<void>;
+/**
  * Retrieves the most recent expo-updates log entries.
  *
  * @param maxAge Sets the max age of retrieved log entries in milliseconds. Default to 3600000 ms (1 hour).

@@ -14,6 +14,9 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class UpdateManifestMetadataTest {
@@ -83,6 +86,27 @@ class UpdateManifestMetadataTest {
     Assert.assertNotNull(actual)
     Assert.assertEquals(1, actual!!.length().toLong())
     Assert.assertEquals("rollout-1", actual.getString("branch-name"))
+  }
+
+  @Test
+  fun testExtraClientParams() {
+    val beforeSave = ManifestMetadata.getExtraClientParams(db, config)
+    assertNull(beforeSave)
+
+    ManifestMetadata.saveExtraClientParams(db, config, mapOf("wat" to "hello"))
+
+    val afterSave = ManifestMetadata.getExtraClientParams(db, config)
+    assertEquals(mapOf("wat" to "hello"), afterSave)
+  }
+
+  @Test
+  fun testExtraClientParamsValidation() {
+    assertFailsWith(
+      exceptionClass = IllegalArgumentException::class,
+      block = {
+        ManifestMetadata.saveExtraClientParams(db, config, mapOf("Hello" to "World"))
+      }
+    )
   }
 
   private fun createConfig(): UpdatesConfiguration {
