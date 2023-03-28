@@ -1,28 +1,20 @@
-name: iOS Client - EAS Build
+name: iOS Client - add label to trigger EAS Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      buildType:
-        required: true
-        type: 'choice'
-        description: 'buildType'
-        options:
-          - versioned-client
-          - unversioned-client
-          - versioned-client-signed
-          - versioned-client-add-sdk
-  schedule:
-    # 5:20 AM UTC time on every Monday, Wednesday and Friday
-    # Build a versioned client
-    - cron: '20 5 * * 1,3,5'
-    # 5:20 AM UTC time on every Monday
-    # Run versioning process for the next sdk and build a versioned client
-    - cron: '20 5 * * 1'
   pull_request:
     paths:
       - .github/workflows/client-ios-eas.yml
       - apps/eas-expo-go/**
+      - ios/**
+      - tools/src/dynamic-macros/**
+      - tools/src/commands/IosGenerateDynamicMacros.ts
+      - tools/src/client-build/**
+      - tools/src/commands/ClientBuild.ts
+      - secrets/**
+      - fastlane/**
+      - Gemfile.lock
+      - .ruby-version
+      - yarn.lock
   push:
     branches: [main, sdk-*]
     paths:
@@ -76,37 +68,12 @@ jobs:
           else
             echo "profile=unversioned-client" >> $GITHUB_OUTPUT
           fi
-      - name: Trigger build
-        uses: fjogeleit/http-request-action@v1
+      - uses: actions/github-script@v6
         with:
-          url: 'https://api.expo.dev/graphql'
-          method: 'POST'
-          customHeaders: '{"Authorization": "Bearer ${{ secrets.EAS_BUILD_BOT_TOKEN }}"}'
-          data: |
-            mutation IosBuidMutation {
-            	build {
-            		createIosBuild(
-            			appId: "09066dbe-ef65-460e-9201-b7aa931abbf4"
-            			job: {
-            				type: UNKNOWN
-            				triggeredBy: GIT_BASED_INTEGRATION
-            				projectArchive: {
-            					type: GIT
-            					repositoryUrl: "https://github.com/expo/expo.git"
-            					gitRef: "${{ github.event.payload.head }}"
-            				}
-            				projectRootDirectory: "apps/eas-expo-go"
-            				secrets: {
-            					robotAccessToken: "${{ secrets.EAS_BUILD_BOT_TOKEN }}"
-            				},
-            				buildProfile: "${{ steps.profile.outputs.profile }}"
-            			}
-            			metadata: { trackingContext: {}, message: "[${{ github.triggering_actor }} - ${{ github.ref }}]" }
-            			buildParams: { resourceClass: IOS_M_MEDIUM }
-            		) {
-            			build {
-            				id
-            			}
-            		}
-            	}
-            }
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["eas-build-ios-${{ steps.profile.outputs.profile  }}"]
+            })
