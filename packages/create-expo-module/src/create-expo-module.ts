@@ -24,7 +24,7 @@ import {
 } from './resolvePackageManager';
 import { eventCreateExpoModule, getTelemetryClient, logEventAsync } from './telemetry';
 import { CommandOptions, LocalSubstitutionData, SubstitutionData } from './types';
-import { newStep } from './utils';
+import { newStep } from './utils/ora';
 
 const debug = require('debug')('create-expo-module:main') as typeof console.log;
 const packageJson = require('../package.json');
@@ -49,12 +49,14 @@ const IGNORES_PATHS = [
 // Url to the documentation on Expo Modules
 const DOCS_URL = 'https://docs.expo.dev/modules';
 
+const FYI_LOCAL_DIR = 'https://expo.fyi/expo-module-local-autolinking.md';
+
 async function getCorrectLocalDirectory(targetOrSlug: string) {
   const packageJsonPath = await findUp('package.json', { cwd: CWD });
   if (!packageJsonPath) {
     console.log(
       chalk.red.bold(
-        '⚠️ This command should  be run inside your Expo project when run with the --local flag.'
+        '⚠️ This command should be run inside your Expo project when run with the --local flag.'
       )
     );
     console.log(
@@ -74,6 +76,17 @@ async function getCorrectLocalDirectory(targetOrSlug: string) {
  * @param command An object from `commander`.
  */
 async function main(target: string | undefined, options: CommandOptions) {
+  if (options.local) {
+    console.log();
+    console.log(
+      `${chalk.gray('The local module will be created in the ')}${chalk.gray.bold.italic(
+        'modules'
+      )} ${chalk.gray('directory in the root of your project. Learn more: ')}${chalk.gray.bold(
+        FYI_LOCAL_DIR
+      )}`
+    );
+    console.log();
+  }
   const slug = await askForPackageSlugAsync(target, options.local);
   const targetDir = options.local
     ? await getCorrectLocalDirectory(target || slug)
@@ -92,7 +105,7 @@ async function main(target: string | undefined, options: CommandOptions) {
   // Make one line break between prompts and progress logs
   console.log();
 
-  const packageManager = await resolvePackageManager();
+  const packageManager = resolvePackageManager();
   const packagePath = options.source
     ? path.join(CWD, options.source)
     : await downloadPackageAsync(targetDir, options.local);
@@ -153,10 +166,11 @@ async function main(target: string | undefined, options: CommandOptions) {
   }
 
   console.log();
-  console.log('✅ Successfully created Expo module');
   if (options.local) {
+    console.log(`✅ Successfully created Expo module in ${chalk.bold.italic(`modules/${slug}`)}`);
     printFurtherLocalInstructions(slug, data.project.moduleName);
   } else {
+    console.log('✅ Successfully created Expo module');
     printFurtherInstructions(targetDir, packageManager, options.example);
   }
 }
@@ -197,14 +211,65 @@ async function getNpmTarballUrl(packageName: string, version: string = 'latest')
 }
 
 /**
+ * Gets expo SDK version major from the local package.json.
+ */
+async function getLocalSdkMajorVersion(): Promise<string | null> {
+  const path = require.resolve('expo/package.json', { paths: [process.cwd()] });
+  if (!path) {
+    return null;
+  }
+  const { version } = require(path) ?? {};
+  return version?.split('.')[0] ?? null;
+}
+
+/**
+ * Selects correct version of the template based on the SDK version for local modules and EXPO_BETA flag.
+ */
+async function getTemplateVersion(isLocal: boolean) {
+  if (EXPO_BETA) {
+    return 'next';
+  }
+  if (!isLocal) {
+    return 'latest';
+  }
+  try {
+    const sdkVersionMajor = await getLocalSdkMajorVersion();
+    return sdkVersionMajor ? `sdk-${sdkVersionMajor}` : 'latest';
+  } catch {
+    console.log();
+    console.warn(
+      chalk.yellow(
+        "Couldn't determine the SDK version from the local project, using `latest` as the template version."
+      )
+    );
+    return 'latest';
+  }
+}
+
+/**
  * Downloads the template from NPM registry.
  */
 async function downloadPackageAsync(targetDir: string, isLocal = false): Promise<string> {
   return await newStep('Downloading module template from npm', async (step) => {
-    const tarballUrl = await getNpmTarballUrl(
-      isLocal ? 'expo-module-template-local' : 'expo-module-template',
-      EXPO_BETA ? 'next' : 'latest'
-    );
+    const templateVersion = await getTemplateVersion(isLocal);
+    let tarballUrl: string | null = null;
+    try {
+      tarballUrl = await getNpmTarballUrl(
+        isLocal ? 'expo-module-template-local' : 'expo-module-template',
+        templateVersion
+      );
+    } catch {
+      console.log();
+      console.warn(
+        chalk.yellow(
+          "Couldn't download the versioned template from npm, falling back to the latest version."
+        )
+      );
+      tarballUrl = await getNpmTarballUrl(
+        isLocal ? 'expo-module-template-local' : 'expo-module-template',
+        'latest'
+      );
+    }
 
     await downloadTarball({
       url: tarballUrl,
@@ -301,9 +366,9 @@ async function askForSubstitutionDataAsync(
   slug: string,
   isLocal = false
 ): Promise<SubstitutionData | LocalSubstitutionData> {
-  const promptQueries = await (isLocal
-    ? getLocalSubstitutionDataPrompts
-    : getSubstitutionDataPrompts)(slug);
+  const promptQueries = await (
+    isLocal ? getLocalSubstitutionDataPrompts : getSubstitutionDataPrompts
+  )(slug);
 
   // Stop the process when the user cancels/exits the prompt.
   const onCancel = () => {
@@ -399,18 +464,19 @@ function printFurtherInstructions(
     commands.forEach((command) => console.log(chalk.gray('>'), chalk.bold(command)));
     console.log();
   }
-  console.log(`Visit ${chalk.blue.bold(DOCS_URL)} for the documentation on Expo Modules APIs`);
+  console.log(`Learn more on Expo Modules APIs: ${chalk.blue.bold(DOCS_URL)}`);
 }
 
 function printFurtherLocalInstructions(slug: string, name: string) {
-  console.log(`You can now import this module inside your application:`);
   console.log();
-  console.log(chalk.blue(`import { hello } from '${slug}';`));
+  console.log(`You can now import this module inside your application.`);
+  console.log(`For example, you can add this line to your App.js or App.tsx file:`);
+  console.log(`${chalk.gray.italic(`import ${name} './modules/${slug}';`)}`);
   console.log();
-  console.log(`Visit ${chalk.blue.bold(DOCS_URL)} for the documentation on Expo Modules APIs`);
+  console.log(`Learn more on Expo Modules APIs: ${chalk.blue.bold(DOCS_URL)}`);
   console.log(
     chalk.yellow(
-      `Remember you need to rebuild your development client or reinstall pods to see the changes.`
+      `Remember to re-build your native app (for example, with ${chalk.bold('npx expo run')}) when you make changes to the module. Native code changes are not reloaded with Fast Refresh.`
     )
   );
 }

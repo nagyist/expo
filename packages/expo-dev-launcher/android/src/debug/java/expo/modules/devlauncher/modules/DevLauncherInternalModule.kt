@@ -7,11 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import expo.modules.core.utilities.EmulatorUtilities
-import expo.modules.devlauncher.DevLauncherController
 import expo.modules.devlauncher.DevLauncherController.Companion.wasInitialized
 import expo.modules.devlauncher.helpers.DevLauncherInstallationIDHelper
 import expo.modules.devlauncher.koin.DevLauncherKoinComponent
@@ -26,7 +24,6 @@ private const val ON_NEW_DEEP_LINK_EVENT = "expo.modules.devlauncher.onnewdeepli
 private const val CLIENT_PACKAGE_NAME = "host.exp.exponent"
 private val CLIENT_HOME_QR_SCANNER_DEEP_LINK = Uri.parse("expo-home://qr-scanner")
 private const val LAUNCHER_NAVIGATION_STATE_KEY = "expo.modules.devlauncher.navigation-state"
-
 
 class DevLauncherInternalModule(reactContext: ReactApplicationContext?) :
   ReactContextBaseJavaModule(reactContext), DevLauncherKoinComponent {
@@ -50,46 +47,41 @@ class DevLauncherInternalModule(reactContext: ReactApplicationContext?) :
 
   override fun getName() = "EXDevLauncherInternal"
 
-  override fun hasConstants(): Boolean = true
-
   override fun getConstants(): Map<String, Any> {
     val isRunningOnEmulator = EmulatorUtilities.isRunningOnEmulator()
     return mapOf(
       "installationID" to installationIDHelper.getOrCreateInstallationID(reactApplicationContext),
       "isDevice" to !isRunningOnEmulator,
-      "updatesConfig" to getUpdatesConfig(),
+      "updatesConfig" to getUpdatesConfig()
     )
   }
 
   private fun getUpdatesConfig(): WritableMap {
     val map = Arguments.createMap()
 
-    val runtimeVersion = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_RUNTIME_VERSION")
-    val sdkVersion = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_SDK_VERSION")
-    var projectUrl = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_UPDATE_URL")
+    val runtimeVersion = controller.updatesInterface?.runtimeVersion
+    val projectUri = controller.updatesInterface?.updateUrl
+    val appId = projectUri?.lastPathSegment ?: ""
 
-    val appId = if (projectUrl.isNotEmpty()) {
-      Uri.parse(projectUrl).lastPathSegment ?: ""
-    } else {
-      ""
-    }
-
-    val projectUri = Uri.parse(projectUrl)
-
-    val isModernManifestProtocol = projectUri.host.equals("u.expo.dev") || projectUri.host.equals("staging-u.expo.dev")
+    val isModernManifestProtocol = projectUri?.host.equals("u.expo.dev") || projectUri?.host.equals("staging-u.expo.dev")
     val usesEASUpdates = isModernManifestProtocol && appId.isNotEmpty()
 
     return map.apply {
       putString("appId", appId)
       putString("runtimeVersion", runtimeVersion)
-      putString("sdkVersion", sdkVersion)
       putBoolean("usesEASUpdates", usesEASUpdates)
-      putString("projectUrl", projectUrl)
+      putString("projectUrl", projectUri.toString())
     }
   }
 
   private fun sanitizeUrlString(url: String): Uri {
-    return Uri.parse(url.trim())
+    var sanitizedUrl = url.trim()
+    // If the url does contain a scheme use "http://"
+    if (!sanitizedUrl.contains("://")) {
+      sanitizedUrl = "http://" + sanitizedUrl
+    }
+
+    return Uri.parse(sanitizedUrl)
   }
 
   @ReactMethod
@@ -130,7 +122,7 @@ class DevLauncherInternalModule(reactContext: ReactApplicationContext?) :
 
     for (recentlyOpenedApp in controller.getRecentlyOpenedApps()) {
       val app = Arguments.createMap()
-      
+
       app.putDouble("timestamp", recentlyOpenedApp.timestamp.toDouble())
       app.putString("name", recentlyOpenedApp.name)
       app.putString("url", recentlyOpenedApp.url)
@@ -231,16 +223,14 @@ class DevLauncherInternalModule(reactContext: ReactApplicationContext?) :
     val packageInfo = packageManager.getPackageInfo(packageName, 0)
     val applicationInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
     val appName = packageManager.getApplicationLabel(applicationInfo).toString()
-    val runtimeVersion = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_RUNTIME_VERSION")
-    val sdkVersion = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_SDK_VERSION")
-    var appIcon = getApplicationIconUri()
+    val runtimeVersion = controller.updatesInterface?.runtimeVersion
+    val appIcon = getApplicationIconUri()
 
-    var updatesUrl = DevLauncherController.getMetadataValue(reactApplicationContext, "expo.modules.updates.EXPO_UPDATE_URL")
-    var appId = ""
-
-    if (updatesUrl.isNotEmpty()) {
-      var uri = Uri.parse(updatesUrl)
-      appId = uri.lastPathSegment ?: ""
+    val updatesUrl = controller.updatesInterface?.updateUrl
+    val appId = if (updatesUrl !== null) {
+      updatesUrl.lastPathSegment ?: ""
+    } else {
+      ""
     }
 
     map.apply {
@@ -249,7 +239,6 @@ class DevLauncherInternalModule(reactContext: ReactApplicationContext?) :
       putString("appName", appName)
       putString("appIcon", appIcon)
       putString("runtimeVersion", runtimeVersion)
-      putString("sdkVersion", sdkVersion)
     }
 
     promise.resolve(map)

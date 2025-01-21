@@ -1,19 +1,23 @@
-import { css } from '@emotion/react';
-import { theme, SnackLogo } from '@expo/styleguide';
-import { spacing } from '@expo/styleguide-base';
-import { ChangelogIcon, DiscordIcon, MessageDotsSquareIcon } from '@expo/styleguide-icons';
-import { useRouter } from 'next/router';
+import { SnackLogo } from '@expo/styleguide';
+import { ChangelogIcon } from '@expo/styleguide-icons/custom/ChangelogIcon';
+import { DiscordIcon } from '@expo/styleguide-icons/custom/DiscordIcon';
+import { Mail01Icon } from '@expo/styleguide-icons/outline/Mail01Icon';
+import { useRouter } from 'next/compat/router';
+
+import { getPageSection } from '~/common/routes';
 
 import { SidebarSingleEntry } from './SidebarSingleEntry';
 import { ArchiveIcon } from './icons/Archive';
 
-import { getPageSection } from '~/common/routes';
+type SideBarFooterProps = {
+  isMobileMenuVisible?: boolean;
+};
 
-export const SidebarFooter = () => {
-  const { pathname } = useRouter();
-  const isArchive = getPageSection(pathname) === 'archive';
+export const SidebarFooter = ({ isMobileMenuVisible }: SideBarFooterProps) => {
+  const router = useRouter();
+  const isArchive = router?.pathname ? getPageSection(router.pathname) === 'archive' : false;
   return (
-    <div css={sidebarFooterContainer}>
+    <div className="flex flex-col gap-0.5 border-t border-t-default bg-default p-4">
       <SidebarSingleEntry
         secondary
         href="/archive"
@@ -31,32 +35,27 @@ export const SidebarFooter = () => {
       <SidebarSingleEntry
         secondary
         href="https://chat.expo.dev"
-        title="Discord"
+        title="Discord and Forums"
         Icon={DiscordIcon}
         isExternal
+        shouldLeakReferrer
       />
       <SidebarSingleEntry
         secondary
-        href="https://forums.expo.dev"
-        title="Forums"
-        Icon={MessageDotsSquareIcon}
+        href="https://expo.dev/mailing-list/signup"
+        title="Newsletter"
+        Icon={Mail01Icon}
         isExternal
       />
-      <SidebarSingleEntry
-        secondary
-        href="https://expo.dev/changelog"
-        title="Changelog"
-        Icon={ChangelogIcon}
-        isExternal
-      />
+      {isMobileMenuVisible && (
+        <SidebarSingleEntry
+          secondary
+          href="https://expo.dev/changelog"
+          title="Changelog"
+          Icon={ChangelogIcon}
+          isExternal
+        />
+      )}
     </div>
   );
 };
-
-const sidebarFooterContainer = css({
-  display: 'flex',
-  flexDirection: 'column',
-  padding: spacing[4],
-  borderTop: `1px solid ${theme.border.default}`,
-  background: theme.background.default,
-});

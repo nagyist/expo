@@ -1,34 +1,13 @@
 import { ExpoConfig } from '@expo/config-types';
 
-import { createInfoPlistPlugin } from '../plugins/ios-plugins';
-import { gteSdkVersion } from '../utils/versions';
-import { addWarningIOS } from '../utils/warnings';
 import { InfoPlist } from './IosConfig.types';
+import { createInfoPlistPlugin } from '../plugins/ios-plugins';
+import { addWarningIOS } from '../utils/warnings';
 
 export const withRequiresFullScreen = createInfoPlistPlugin(
   setRequiresFullScreen,
   'withRequiresFullScreen'
 );
-
-// NOTES: This is defaulted to `true` for now to match the behavior prior to SDK
-// 34, but will change to `false` in SDK +43.
-export function getRequiresFullScreen(config: Pick<ExpoConfig, 'ios' | 'sdkVersion'>) {
-  // Yes, the property is called ios.requireFullScreen, without the s - not "requires"
-  // This is confusing indeed because the actual property name does have the s
-  if (config.ios?.hasOwnProperty('requireFullScreen')) {
-    return !!config.ios.requireFullScreen;
-  } else {
-    // In SDK 43, the `requireFullScreen` default has been changed to false.
-    if (
-      gteSdkVersion(config, '43.0.0')
-      // TODO: Uncomment after SDK 43 is released.
-      // || !config.sdkVersion
-    ) {
-      return false;
-    }
-    return true;
-  }
-}
 
 const iPadInterfaceKey = 'UISupportedInterfaceOrientations~ipad';
 
@@ -80,11 +59,12 @@ export function setRequiresFullScreen(
   config: Pick<ExpoConfig, 'ios'>,
   infoPlist: InfoPlist
 ): InfoPlist {
-  const requiresFullScreen = getRequiresFullScreen(config);
-  if (!requiresFullScreen) {
+  const requiresFullScreen = !!config.ios?.requireFullScreen;
+  const isTabletEnabled = config.ios?.supportsTablet || config.ios?.isTabletOnly;
+  if (isTabletEnabled && !requiresFullScreen) {
     const existing = resolveExistingIpadInterfaceOrientations(infoPlist[iPadInterfaceKey]);
 
-    // There currently exists no mechanism to safely undo this feature besides `expo prebuild --clear`,
+    // There currently exists no mechanism to safely undo this feature besides `npx expo prebuild --clear`,
     // this seems ok though because anyone using `UISupportedInterfaceOrientations~ipad` probably
     // wants them to be defined to this value anyways. This is also the default value used in the Xcode iOS template.
 

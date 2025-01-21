@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["dom", "esnext"],
-    "jsx": "react",
+    "lib": ["dom", "DOM.Iterable", "esnext"],
+    "jsx": "react-native",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "types": ["jest", "jest-require"],
     "typeRoots": [
       "./ts-declarations",
-      "node_modules/@types"
+      "./node_modules/@types",
+      "../../node_modules/@types",
     ],
     "sourceMap": true,
     "declaration": true,

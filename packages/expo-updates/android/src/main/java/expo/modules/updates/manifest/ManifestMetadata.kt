@@ -26,7 +26,7 @@ object ManifestMetadata {
   ): JSONObject? {
     return try {
       val jsonString = database.jsonDataDao()!!
-        .loadJSONStringForKey(key, configuration.scopeKey!!)
+        .loadJSONStringForKey(key, configuration.scopeKey)
       if (jsonString != null) JSONObject(jsonString) else null
     } catch (e: Exception) {
       Log.e(TAG, "Error retrieving $key from database", e)
@@ -61,20 +61,23 @@ object ManifestMetadata {
     key: String,
     value: String?
   ) {
-    val extraParamsToWrite = (getExtraParams(database, configuration)?.toMutableMap() ?: mutableMapOf()).also {
-      if (value != null) {
-        it[key] = value
-      } else {
-        it.remove(key)
-      }
-    }.toMap()
+    // this is done within a transaction to ensure consistency
+    database.jsonDataDao()!!.updateJSONStringForKey(EXTRA_PARAMS_KEY, configuration.scopeKey) { previousValue ->
+      val jsonObject = previousValue?.let { JSONObject(it) }
+      val extraParamsToWrite = (jsonObject?.asStringStringMap()?.toMutableMap() ?: mutableMapOf()).also {
+        if (value != null) {
+          it[key] = value
+        } else {
+          it.remove(key)
+        }
+      }.toMap()
 
-    // ensure that this can be serialized to a structured-header dictionary
-    // this will throw for invalid values
-    Dictionary.valueOf(extraParamsToWrite.mapValues { elem -> StringItem.valueOf(elem.value) })
+      // ensure that this can be serialized to a structured-header dictionary
+      // this will throw for invalid values
+      Dictionary.valueOf(extraParamsToWrite.mapValues { elem -> StringItem.valueOf(elem.value) }).serialize()
 
-    val extraClientParamsJSONObject = JSONObject(extraParamsToWrite)
-    database.jsonDataDao()!!.setMultipleFields(mapOf(EXTRA_PARAMS_KEY to extraClientParamsJSONObject.toString()), configuration.scopeKey!!)
+      JSONObject(extraParamsToWrite).toString()
+    }
   }
 
   fun saveMetadata(
@@ -90,7 +93,7 @@ object ManifestMetadata {
       fieldsToSet[MANIFEST_FILTERS_KEY] = responseHeaderData.manifestFilters.toString()
     }
     if (fieldsToSet.isNotEmpty()) {
-      database.jsonDataDao()!!.setMultipleFields(fieldsToSet, configuration.scopeKey!!)
+      database.jsonDataDao()!!.setMultipleFields(fieldsToSet, configuration.scopeKey)
     }
   }
 
