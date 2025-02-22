@@ -25,6 +25,7 @@ describe(resolveOptionsAsync, () => {
       appName: 'app',
       buildCache: false,
       buildType: 'debug',
+      architectures: '',
       device: {
         device: {
           name: 'mock',
@@ -50,26 +51,29 @@ describe(resolveOptionsAsync, () => {
         bundler: true,
         device: 'search',
         install: true,
-        port: 19000,
+        port: 8081,
         variant: 'firstSecondThird',
+        appId: 'dev.expo.test',
       })
     ).toEqual({
-      apkVariantDirectory: '/android/app/build/outputs/apk/second/third/first',
+      apkVariantDirectory: '/android/app/build/outputs/apk/first/second/third',
       appName: 'app',
       buildCache: true,
-      buildType: 'first',
+      buildType: 'third',
+      architectures: '',
       device: {
         device: {
           name: 'mock',
           pid: '123',
         },
       },
-      flavors: ['second', 'third'],
+      flavors: ['first', 'second'],
       install: true,
-      launchActivity: 'com.bacon.mydevicefamilyproject/.MainActivity',
+      launchActivity: 'dev.expo.test/com.bacon.mydevicefamilyproject.MainActivity',
       mainActivity: '.MainActivity',
       packageName: 'com.bacon.mydevicefamilyproject',
-      port: 19000,
+      customAppId: 'dev.expo.test',
+      port: 8081,
       shouldStartBundler: true,
       variant: 'firstSecondThird',
     });

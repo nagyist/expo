@@ -1,5 +1,4 @@
-import { UnavailabilityError } from 'expo-modules-core';
-import { v4 as uuidv4 } from 'uuid';
+import { UnavailabilityError, uuid } from 'expo-modules-core';
 
 import NotificationPresenter from './NotificationPresenterModule';
 import { NotificationContentInput } from './Notifications.types';
@@ -12,11 +11,12 @@ let warningMessageShown = false;
  * @param identifier
  * @return It returns a Promise resolving with the notification's identifier once the notification is successfully scheduled for immediate display.
  * @header schedule
- * @deprecated This method has been deprecated in favor of using an explicit `NotificationHandler` and the [`scheduleNotificationAsync`](#notificationsschedulenotificationasyncrequest) method. More information can be found in our [FYI document](https://expo.fyi/presenting-notifications-deprecated).
+ * @deprecated This method has been deprecated in favor of using an explicit `NotificationHandler` and the [`scheduleNotificationAsync`](#schedulenotificationasyncrequest) method.
+ * More information can be found in our [FYI document](https://expo.fyi/presenting-notifications-deprecated).
  */
 export default async function presentNotificationAsync(
   content: NotificationContentInput,
-  identifier: string = uuidv4()
+  identifier: string = uuid.v4()
 ): Promise<string> {
   if (__DEV__ && !warningMessageShown) {
     console.warn(
