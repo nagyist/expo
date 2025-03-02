@@ -2,7 +2,15 @@
 
 #import <React/RCTBridge+Private.h>
 
+#import <EXDevMenu/DevClientReactNativeFactoryDelegate.h>
+
 NS_ASSUME_NONNULL_BEGIN
+
+@interface RCTRootViewFactory ()
+
+- (NSArray<id<RCTBridgeModule>> *)extraModulesForBridge:(RCTBridge *)bridge;
+
+@end
 
 @interface DevMenuRCTCxxBridge : RCTCxxBridge
 
@@ -16,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface DevMenuRCTCxxBridgeDelegate : NSObject
+@interface DevMenuReactNativeFactoryDelegate : DevClientReactNativeFactoryDelegate
 
 @end
 

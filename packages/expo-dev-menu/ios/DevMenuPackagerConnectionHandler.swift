@@ -1,6 +1,7 @@
 // Copyright 2015-present 650 Industries. All rights reserved.
 
 import Foundation
+import React
 
 class DevMenuPackagerConnectionHandler {
   weak var manager: DevMenuManager?
@@ -47,8 +48,6 @@ class DevMenuPackagerConnectionHandler {
       devDelegate.reload()
     case "toggleDevMenu":
       self.manager?.toggleMenu()
-    case "toggleRemoteDebugging":
-      devDelegate.toggleRemoteDebugging()
     case "toggleElementInspector":
       devDelegate.toggleElementInsector()
     case "togglePerformanceMonitor":

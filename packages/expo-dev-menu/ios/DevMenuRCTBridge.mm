@@ -2,6 +2,8 @@
 
 #import <EXDevMenu/DevMenuRCTBridge.h>
 
+#import <EXDevMenu/DevClientNoOpLoadingView.h>
+
 // The search path for the Swift generated headers are different
 // between use_frameworks and non_use_frameworks mode.
 #if __has_include(<EXDevMenuInterface/EXDevMenuInterface-Swift.h>)
@@ -27,9 +29,17 @@
 #import <React/RCTDevMenu.h>
 #import <React/RCTCxxBridgeDelegate.h>
 #import <React/RCTJSIExecutorRuntimeInstaller.h>
+#if __has_include(<React_RCTAppDelegate/RCTAppSetupUtils.h>)
+// for importing the header from framework, the dash will be transformed to underscore
+#import <React_RCTAppDelegate/RCTAppSetupUtils.h>
+#else
+#import <React-RCTAppDelegate/RCTAppSetupUtils.h>
+#endif
 #if __has_include(<reacthermes/HermesExecutorFactory.h>)
 #import <reacthermes/HermesExecutorFactory.h>
 #endif
+
+
 
 @implementation DevMenuRCTCxxBridge
 
@@ -62,14 +72,17 @@
 
 - (NSArray<Class> *)filterModuleList:(NSArray<Class> *)modules
 {
-  NSArray<NSString *> *allowedModules = @[@"RCT"];
+  NSArray<NSString *> *allowedModules = @[
+    @"RCT",
+    @"ExpoBridgeModule",
+    @"EXNativeModulesProxy",
+    @"EXReactNativeEventEmitter",
+    @"ExpoModulesCore",
+    @"ViewManagerAdapter_",
+    @"EXDevLauncherDevMenu"
+  ];
   NSArray<Class> *filteredModuleList = [modules filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable clazz, NSDictionary<NSString *,id> * _Nullable bindings) {
     NSString* clazzName = NSStringFromClass(clazz);
-      
-    if ([clazz conformsToProtocol:@protocol(EXDevExtensionProtocol)]) {
-      return true;
-    }
-    
     for (NSString *allowedModule in allowedModules) {
       if ([clazzName hasPrefix:allowedModule]) {
         return true;
@@ -77,7 +90,7 @@
     }
     return false;
   }]];
-  
+
   return filteredModuleList;
 }
 
@@ -106,25 +119,21 @@
 
 @end
 
-@interface DevMenuRCTCxxBridgeDelegate () <RCTCxxBridgeDelegate>
+@interface RCTAppDelegate ()
+
+- (Class)getModuleClassFromName:(const char *)name;
 
 @end
 
-@implementation DevMenuRCTCxxBridgeDelegate
+@interface DevClientReactNativeFactoryDelegate (DevMenuRCTAppDelegate)
 
-- (std::unique_ptr<facebook::react::JSExecutorFactory>)jsExecutorFactoryForBridge:(RCTBridge *)bridge
+@end
+
+@implementation DevMenuReactNativeFactoryDelegate
+
+- (RCTBridge *)createBridgeWithDelegate:(id<RCTBridgeDelegate>)delegate launchOptions:(NSDictionary *)launchOptions
 {
-#if __has_include(<reacthermes/HermesExecutorFactory.h>)
-  // Disable Hermes debugger to prevent Hermes debugger uses dev-menu
-  // as inspecting target.
-  auto installBindings = facebook::react::RCTJSIExecutorRuntimeInstaller(nullptr);
-  auto *hermesExecutorFactory = new facebook::react::HermesExecutorFactory(installBindings);
-  hermesExecutorFactory->setEnableDebugger(false);
-  std::unique_ptr<facebook::react::JSExecutorFactory> jsExecutorFactory(hermesExecutorFactory);
-  return std::move(jsExecutorFactory);
-#else
-  return nullptr;
-#endif
+  return [[DevMenuRCTBridge alloc] initWithDelegate:delegate launchOptions:launchOptions];
 }
 
 @end

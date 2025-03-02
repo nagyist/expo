@@ -4,8 +4,8 @@ An Expo universal module to download assets and pass them into other APIs
 
 # API documentation
 
-- [Documentation for the main branch](https://github.com/expo/expo/blob/main/docs/pages/versions/unversioned/sdk/asset.mdx)
 - [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/asset/)
+- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/asset/)
 
 # Installation in managed Expo projects
 
@@ -18,7 +18,7 @@ For bare React Native projects, you must ensure that you have [installed and con
 ### Add the package to your npm dependencies
 
 ```
-expo install expo-asset
+npx expo install expo-asset
 ```
 
 # Contributing

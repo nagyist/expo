@@ -1,73 +1,71 @@
 // Copyright 2015-present 650 Industries. All rights reserved.
 
 import React
+import ReactAppDependencyProvider
 
 @objc
-class DevMenuAppInstance: DevMenuRCTCxxBridgeDelegate, RCTBridgeDelegate {
+class DevMenuAppInstance: DevMenuReactNativeFactoryDelegate {
   static private var CloseEventName = "closeDevMenu"
   static private var OpenEventName = "openDevMenu"
 
   private let manager: DevMenuManager
-
-  var bridge: RCTBridge?
+  var reactNativeFactory: EXDevClientReactNativeFactory?
 
   init(manager: DevMenuManager) {
     self.manager = manager
-
     super.init()
-
-    self.bridge = DevMenuRCTBridge.init(delegate: self, launchOptions: nil)
+    self.dependencyProvider = RCTAppDependencyProvider()
+    self.reactNativeFactory = EXDevClientReactNativeFactory(delegate: self)
   }
 
-  init(manager: DevMenuManager, bridge: RCTBridge) {
-    self.manager = manager
-
-    super.init()
-
-    self.bridge = bridge
+  convenience init(manager: DevMenuManager, bridge: RCTBridge) {
+    self.init(manager: manager)
+    self.reactNativeFactory?.rootViewFactory.bridge = bridge
   }
 
   /**
    Sends an event to JS triggering the animation that collapses the dev menu.
    */
-  public func sendCloseEvent() {
-    bridge?.enqueueJSCall("RCTDeviceEventEmitter.emit", args: [DevMenuAppInstance.CloseEventName])
+  func sendCloseEvent() {
+    self.reactNativeFactory?.rootViewFactory.bridge?.enqueueJSCall("RCTDeviceEventEmitter.emit", args: [DevMenuAppInstance.CloseEventName])
   }
 
-  public func sendOpenEvent() {
-    bridge?.enqueueJSCall("RCTDeviceEventEmitter.emit", args: [DevMenuAppInstance.OpenEventName])
+  func sendOpenEvent() {
+    self.reactNativeFactory?.rootViewFactory.bridge?.enqueueJSCall("RCTDeviceEventEmitter.emit", args: [DevMenuAppInstance.OpenEventName])
   }
 
-  // MARK: RCTBridgeDelegate
+  // MARK: RCTAppDelegate
 
-  func sourceURL(for bridge: RCTBridge!) -> URL! {
-    #if DEBUG
-    if let packagerHost = jsPackagerHost() {
-      return RCTBundleURLProvider.jsBundleURL(
-        forBundleRoot: "index",
-        packagerHost: packagerHost,
-        enableDev: true,
-        enableMinification: false)
-    }
-    #endif
+  override func sourceURL(for bridge: RCTBridge) -> URL {
     return jsSourceUrl()
   }
 
-  func extraModules(for bridge: RCTBridge!) -> [RCTBridgeModule]! {
-    var modules: [RCTBridgeModule] = [DevMenuInternalModule(manager: manager)]
-    modules.append(DevMenuLoadingView.init())
-    modules.append(DevMenuRCTDevSettings.init())
-    return modules
+  override func bundleURL() -> URL? {
+    return jsSourceUrl()
   }
 
-  func bridge(_ bridge: RCTBridge!, didNotFindModule moduleName: String!) -> Bool {
+  override func bridge(_ bridge: RCTBridge, didNotFindModule moduleName: String) -> Bool {
     return moduleName == "DevMenu"
   }
 
   // MARK: private
 
-  private func jsSourceUrl() -> URL? {
-    return DevMenuUtils.resourcesBundle()?.url(forResource: "EXDevMenuApp.ios", withExtension: "js")
+  private func jsSourceUrl() -> URL {
+    #if DEBUG
+    if let packagerHost = jsPackagerHost(),
+      let url = RCTBundleURLProvider.jsBundleURL(
+        forBundleRoot: "packages/expo-dev-menu/index",
+        packagerHost: packagerHost,
+        enableDev: true,
+        enableMinification: false,
+        inlineSourceMap: false) {
+      return url
+    }
+    #endif
+    guard let url = DevMenuUtils.resourcesBundle()?.url(forResource: "EXDevMenuApp.ios", withExtension: "js") else {
+      fatalError("Unable to get expo-dev-menu bundle URL")
+    }
+    return url
   }
 
   private func jsPackagerHost() -> String? {
@@ -76,10 +74,12 @@ class DevMenuAppInstance: DevMenuRCTCxxBridgeDelegate, RCTBridgeDelegate {
       return nil
     }
     // Return `nil` if the content is not a valid URL.
-    guard let content = try? String(contentsOfFile: packagerHostPath, encoding: String.Encoding.utf8).trimmingCharacters(in: CharacterSet.newlines),
-      let url = URL(string: content) else {
+    guard let content = try? String(contentsOfFile: packagerHostPath, encoding: .utf8).trimmingCharacters(in: .newlines) else {
       return nil
     }
-    return url.absoluteString
+    guard let url = URL(string: "http://\(content)"), let host = url.host else {
+      return nil
+    }
+    return "\(host):\(url.port ?? 8081)"
   }
 }

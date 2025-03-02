@@ -1,28 +1,29 @@
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useTheme } from 'ThemeProvider';
 import * as React from 'react';
 
+import getStackNavWithConfig from './StackConfig';
+import { optionalRequire } from './routeBuilder';
+import { TabBackground } from '../components/TabBackground';
 import TabIcon from '../components/TabIcon';
 import { Layout } from '../constants';
+import { CameraScreens } from '../screens/Camera/CameraScreen';
 import ExpoComponents from '../screens/ExpoComponentsScreen';
+import { MapsScreens } from '../screens/ExpoMaps/MapsScreen';
 import { ImageScreens } from '../screens/Image/ImageScreen';
-import getStackConfig from './StackConfig';
-import { optionalRequire } from './routeBuilder';
+import { UIScreens } from '../screens/UI/UIScreen';
+import { VideoScreens } from '../screens/Video/VideoScreen';
+import { type ScreenApiItem, type ScreenConfig } from '../types/ScreenConfig';
 
 const Stack = createStackNavigator();
 
-export const Screens = [
+export const Screens: ScreenConfig[] = [
   {
     getComponent() {
       return optionalRequire(() => require('../screens/DrawerLayoutAndroidScreen'));
     },
     name: 'DrawerLayoutAndroid',
-  },
-  {
-    getComponent() {
-      return optionalRequire(() => require('../screens/BarCodeScannerScreen'));
-    },
-    name: 'BarCodeScanner',
   },
   {
     getComponent() {
@@ -75,18 +76,6 @@ export const Screens = [
   },
   {
     getComponent() {
-      return optionalRequire(() => require('../screens/ProgressViewIOSScreen'));
-    },
-    name: 'ProgressViewIOS',
-  },
-  {
-    getComponent() {
-      return optionalRequire(() => require('../screens/ProgressBarAndroidScreen'));
-    },
-    name: 'ProgressBarAndroid',
-  },
-  {
-    getComponent() {
       return optionalRequire(() => require('../screens/TouchableBounceScreen'));
     },
     name: 'TouchableBounce',
@@ -132,13 +121,6 @@ export const Screens = [
       return optionalRequire(() => require('../screens/ActivityIndicatorScreen'));
     },
     name: 'ActivityIndicator',
-  },
-  {
-    getComponent() {
-      return optionalRequire(() => require('../screens/QRCodeScreen'));
-    },
-    name: 'QRCode',
-    options: { title: 'QR Code' },
   },
   {
     getComponent() {
@@ -291,6 +273,14 @@ export const Screens = [
   },
   {
     getComponent() {
+      return optionalRequire(() => require('../screens/GL/GLViewOnBusyThread'));
+    },
+    name: 'GLViewOnBusyThread',
+    options: { title: 'Creating GLView when a thread is busy' },
+    route: 'gl/busythread',
+  },
+  {
+    getComponent() {
       return optionalRequire(() => require('../screens/GestureHandlerPinchScreen'));
     },
     name: 'GestureHandlerPinch',
@@ -327,12 +317,6 @@ export const Screens = [
       return optionalRequire(() => require('../screens/Reanimated/ReanimatedScreen'));
     },
     name: 'Reanimated',
-  },
-  {
-    getComponent() {
-      return optionalRequire(() => require('../screens/GifScreen'));
-    },
-    name: 'Gif',
   },
   {
     getComponent() {
@@ -378,21 +362,41 @@ export const Screens = [
   },
   {
     getComponent() {
-      return optionalRequire(() => require('../screens/ExpoMaps/ExpoMapsScreen'));
+      return optionalRequire(() => require('../screens/ExpoMaps/MapsScreen'));
     },
     name: 'ExpoMaps',
   },
   {
     getComponent() {
-      return optionalRequire(() => require('../screens/AV/VideoScreen'));
+      return optionalRequire(() => require('../screens/Audio/AV/VideoScreen'));
     },
-    name: 'Video',
+    name: 'Video (expo-av)',
+    route: 'video-expo-av',
+  },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/Video/VideoScreen'));
+    },
+    name: 'Video (expo-video)',
+    route: 'video-expo-video',
+  },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/UI/UIScreen'));
+    },
+    name: 'Expo UI',
   },
   {
     getComponent() {
       return optionalRequire(() => require('../screens/Screens'));
     },
     name: 'Screens',
+  },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/SymbolImageScreen'));
+    },
+    name: 'Symbols',
   },
   {
     getComponent() {
@@ -409,27 +413,52 @@ export const Screens = [
   },
   {
     getComponent() {
-      return optionalRequire(() => require('../screens/SharedElementScreen'));
-    },
-    name: 'SharedElement',
-  },
-  {
-    getComponent() {
       return optionalRequire(() => require('../screens/FlashListScreen'));
     },
     name: 'FlashList',
   },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/ClipboardPasteButtonScreen'));
+    },
+    name: 'ClipboardPasteButton',
+  },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/LivePhotoScreen'));
+    },
+    name: 'LivePhoto',
+  },
+  {
+    getComponent() {
+      return optionalRequire(() => require('../screens/MeshGradientScreen'));
+    },
+    name: 'MeshGradient',
+  },
+  ...CameraScreens,
   ...ImageScreens,
+  ...VideoScreens,
+  ...UIScreens,
+  ...MapsScreens,
 ];
 
+export const screenApiItems: ScreenApiItem[] = Screens.map(({ name, route }) => ({
+  name,
+  route: '/components/' + (route ?? name.toLowerCase()),
+  isAvailable: true,
+}));
+
 function ExpoComponentsStackNavigator(props: { navigation: BottomTabNavigationProp<any> }) {
+  const { theme } = useTheme();
   return (
-    <Stack.Navigator {...props} {...getStackConfig(props)}>
+    <Stack.Navigator {...props} {...getStackNavWithConfig(props.navigation, theme)}>
       <Stack.Screen
         name="ExpoComponents"
-        options={{ title: Layout.isSmallDevice ? 'Expo SDK Components' : 'Components in Expo SDK' }}
-        component={ExpoComponents}
-      />
+        options={{
+          title: Layout.isSmallDevice ? 'Expo SDK Components' : 'Components in Expo SDK',
+        }}>
+        {() => <ExpoComponents apis={screenApiItems} />}
+      </Stack.Screen>
       {Screens.map(({ name, getComponent, options }) => (
         <Stack.Screen name={name} key={name} getComponent={getComponent} options={options ?? {}} />
       ))}
@@ -437,13 +466,13 @@ function ExpoComponentsStackNavigator(props: { navigation: BottomTabNavigationPr
   );
 }
 
-const icon = ({ focused }: { focused: boolean }) => {
-  return <TabIcon name="react" focused={focused} />;
-};
 ExpoComponentsStackNavigator.navigationOptions = {
   title: 'Components',
   tabBarLabel: 'Components',
-  tabBarIcon: icon,
-  drawerIcon: icon,
+  tabBarIcon: ({ focused }: { focused: boolean }) => {
+    return <TabIcon name="react" focused={focused} />;
+  },
+  tabBarBackground: () => <TabBackground />,
 };
+
 export default ExpoComponentsStackNavigator;

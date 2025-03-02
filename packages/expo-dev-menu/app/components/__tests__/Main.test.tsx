@@ -3,7 +3,6 @@ import * as React from 'react';
 import { DevLauncher } from '../../native-modules/DevLauncher';
 import {
   AppInfo,
-  toggleDebugRemoteJSAsync,
   toggleElementInspectorAsync,
   toggleFastRefreshAsync,
   togglePerformanceMonitorAsync,
@@ -15,7 +14,6 @@ import { Main } from '../Main';
 
 const { navigateToLauncherAsync } = DevLauncher;
 
-const mockToggleDebugRemoteJSAsync = toggleDebugRemoteJSAsync as jest.Mock;
 const mockToggleElementInspectorAsync = toggleElementInspectorAsync as jest.Mock;
 const mockToggleFastRefreshAsync = toggleFastRefreshAsync as jest.Mock;
 const mockTogglePerformanceMonitorAsync = togglePerformanceMonitorAsync as jest.Mock;
@@ -24,7 +22,6 @@ const mockNavigateToLauncherAsync = navigateToLauncherAsync as jest.Mock;
 const mockReloadAsync = reloadAsync as jest.Mock;
 
 const mockFns: jest.Mock[] = [
-  mockToggleDebugRemoteJSAsync,
   mockToggleElementInspectorAsync,
   mockToggleFastRefreshAsync,
   mockTogglePerformanceMonitorAsync,
@@ -82,30 +79,6 @@ describe('<Main />', () => {
     expect(toggleFastRefreshAsync).toHaveBeenCalledTimes(1);
   });
 
-  describe('Remote JS Debugger', () => {
-    it('should be available for SDK < 49', async () => {
-      const { getByText, getByTestId } = render(<Main />, {
-        initialAppProviderProps: {
-          appInfo: {
-            sdkVersion: '48.0.0',
-          },
-        },
-      });
-      await waitFor(() => getByText(/go home/i));
-
-      expect(toggleDebugRemoteJSAsync).toHaveBeenCalledTimes(0);
-      await act(async () => fireEvent.press(getByTestId('remote-js-debugger')));
-      expect(toggleDebugRemoteJSAsync).toHaveBeenCalledTimes(1);
-    });
-
-    it('should be disabled for SDK 49+', async () => {
-      const { getByText, getByTestId } = render(<Main />);
-      await waitFor(() => getByText(/go home/i));
-
-      expect(getByTestId('remote-js-debugger')).toBeDisabled();
-    });
-  });
-
   test('copy text functions', async () => {
     const fakeAppInfo: AppInfo = {
       appName: 'testing',
@@ -116,7 +89,7 @@ describe('<Main />', () => {
       runtimeVersion: '10',
     };
 
-    const { getByText } = render(<Main />, {
+    const { getByText, getByTestId } = render(<Main />, {
       initialAppProviderProps: { appInfo: fakeAppInfo },
     });
     await waitFor(() => getByText(/go home/i));
@@ -135,7 +108,7 @@ describe('<Main />', () => {
     mockCopyToClipboardAsync.mockClear();
 
     expect(copyToClipboardAsync).toHaveBeenCalledTimes(0);
-    await act(async () => fireEvent.press(getByText(/copy link/i)));
+    await act(async () => fireEvent.press(getByTestId(/main.copyUrlButton/i)));
     expect(copyToClipboardAsync).toHaveBeenCalledTimes(1);
 
     expect(copyToClipboardAsync).toHaveBeenLastCalledWith(fakeAppInfo.hostUrl);
