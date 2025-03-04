@@ -7,17 +7,17 @@ import EXStructuredHeaders
  * For non-multipart responses, this is the data from the headers in the response.
  * For multipart responses, this is the data from the headers in the outer response (as opposed to the headers in a part).
  */
-internal final class ResponseHeaderData {
+public final class ResponseHeaderData {
   /**
    * expo-protocol-version header. Indicates which version of the expo-updates protocol the response is.
    */
-  let protocolVersion: String?
+  private let protocolVersionRaw: String?
 
   /**
    * expo-server-defined-headers header.  It defines headers that this library must store until overwritten by a newer dictionary.
    * They must be included in every subsequent update request.
    */
-  let serverDefinedHeadersRaw: String?
+  private let serverDefinedHeadersRaw: String?
 
   /**
    * expo-manifest-filters header. It is used to filter updates stored by the client library by the
@@ -25,19 +25,19 @@ internal final class ResponseHeaderData {
    * field in the metadata must either be missing or equal for the update to be included.
    * The client library must store the manifest filters until it is overwritten by a newer response.
    */
-  let manifestFiltersRaw: String?
+  private let manifestFiltersRaw: String?
 
-  /**
-   * Classic updates Expo Go manifest signature
-   */
-  let manifestSignature: String?
-
-  required init(protocolVersion: String?, serverDefinedHeadersRaw: String?, manifestFiltersRaw: String?, manifestSignature: String?) {
-    self.protocolVersion = protocolVersion
+  public required init(protocolVersionRaw: String?, serverDefinedHeadersRaw: String?, manifestFiltersRaw: String?) {
+    self.protocolVersionRaw = protocolVersionRaw
     self.serverDefinedHeadersRaw = serverDefinedHeadersRaw
     self.manifestFiltersRaw = manifestFiltersRaw
-    self.manifestSignature = manifestSignature
   }
+
+  lazy var protocolVersion: Int? = {
+    self.protocolVersionRaw.let { it in
+      Int(it)
+    }
+  }()
 
   lazy var serverDefinedHeaders: [String: Any]? = {
     self.serverDefinedHeadersRaw.let { it in
@@ -45,7 +45,7 @@ internal final class ResponseHeaderData {
     }
   }()
 
-  lazy var manifestFilters: [String: Any]? = {
+  public lazy var manifestFilters: [String: Any]? = {
     self.manifestFiltersRaw.let { it in
       ResponseHeaderData.dictionaryWithStructuredHeader(it)
     }

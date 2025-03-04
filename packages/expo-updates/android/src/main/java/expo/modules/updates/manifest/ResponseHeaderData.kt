@@ -17,7 +17,7 @@ data class ResponseHeaderData(
   /**
    * expo-protocol-version header. Indicates which version of the expo-updates protocol the response is.
    */
-  val protocolVersion: String? = null,
+  private val protocolVersionRaw: String? = null,
   /**
    * expo-server-defined-headers header.  It defines headers that this library must store until overwritten by a newer dictionary.
    * They must be included in every subsequent update request.
@@ -29,12 +29,10 @@ data class ResponseHeaderData(
    * field in the metadata must either be missing or equal for the update to be included.
    * The client library must store the manifest filters until it is overwritten by a newer response.
    */
-  private val manifestFiltersRaw: String? = null,
-  /**
-   * Classic updates Expo Go manifest signature
-   */
-  val manifestSignature: String? = null,
+  private val manifestFiltersRaw: String? = null
 ) {
+  val protocolVersion = protocolVersionRaw?.let { Integer.valueOf(it) }
+
   val serverDefinedHeaders: JSONObject? by lazy {
     serverDefinedHeadersRaw?.let { headerDictionaryToJSONObject(it) }
   }

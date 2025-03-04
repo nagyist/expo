@@ -62,7 +62,7 @@ class ExpoInsightsModule : Module() {
    */
   private suspend fun dispatchEvent(projectId: String, eventName: String, data: Map<String, String?>) {
     val endpointUrl = Uri
-      .parse("https://staging-i.expo.dev/v1/c/$projectId")
+      .parse("https://i.expo.dev/v1/c/$projectId")
       .buildUpon()
       .apply {
         data.forEach { (key, value) ->
@@ -141,5 +141,6 @@ private fun PackageManager.getPackageInfoCompat(packageName: String, flags: Int 
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
     getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(flags.toLong()))
   } else {
-    @Suppress("DEPRECATION") getPackageInfo(packageName, flags)
+    @Suppress("DEPRECATION")
+    getPackageInfo(packageName, flags)
   }

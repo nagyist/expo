@@ -11,8 +11,8 @@ Provides an interface for native user localization information.
 
 # API documentation
 
-- [Documentation for the main branch](https://github.com/expo/expo/blob/main/docs/pages/versions/unversioned/sdk/localization.mdx)
 - [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/localization/)
+- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/localization/)
 
 # Installation in managed Expo projects
 
@@ -25,16 +25,16 @@ For bare React Native projects, you must ensure that you have [installed and con
 ### Add the package to your npm dependencies
 
 ```
-expo install expo-localization
+npx expo install expo-localization
 ```
-
-### Configure for iOS
-
-Run `npx pod-install` after installing the npm package.
 
 ### Configure for Android
 
 No additional set up necessary.
+
+### Configure for iOS
+
+Run `npx pod-install` after installing the npm package.
 
 # Contributing
 

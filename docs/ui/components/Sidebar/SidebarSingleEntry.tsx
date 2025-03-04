@@ -1,7 +1,5 @@
-import { css } from '@emotion/react';
-import { mergeClasses, theme, typography } from '@expo/styleguide';
-import { borderRadius, spacing } from '@expo/styleguide-base';
-import { ArrowUpRightIcon } from '@expo/styleguide-icons';
+import { mergeClasses } from '@expo/styleguide';
+import { ArrowUpRightIcon } from '@expo/styleguide-icons/outline/ArrowUpRightIcon';
 import type { ComponentType, HTMLAttributes } from 'react';
 
 import { A } from '../Text';
@@ -13,6 +11,7 @@ type SidebarSingleEntryProps = {
   isActive?: boolean;
   isExternal?: boolean;
   secondary?: boolean;
+  shouldLeakReferrer?: boolean;
 };
 
 export const SidebarSingleEntry = ({
@@ -22,84 +21,28 @@ export const SidebarSingleEntry = ({
   isActive = false,
   isExternal = false,
   secondary = false,
+  shouldLeakReferrer,
 }: SidebarSingleEntryProps) => {
   return (
     <A
       href={href}
-      css={[containerStyle, secondary && secondaryContainerStyle, isActive && activeContainerStyle]}
+      className={mergeClasses(
+        'flex min-h-[32px] items-center gap-3 rounded-md px-2 py-1 text-sm !leading-[100%] text-secondary !opacity-100',
+        'hocus:bg-element',
+        'focus-visible:relative focus-visible:z-10',
+        secondary && 'text-xs',
+        isActive && 'bg-palette-blue3 font-medium text-link hocus:bg-palette-blue4 hocus:text-link'
+      )}
+      shouldLeakReferrer={shouldLeakReferrer}
       isStyled>
-      <span
-        css={[
-          iconWrapperStyle,
-          secondary && secondaryIconWrapperStyle,
-          isActive && activeIconWrapperStyle,
-        ]}>
-        <Icon
-          className={mergeClasses(
-            'icon-sm',
-            isActive ? 'text-palette-blue11' : 'text-icon-secondary'
-          )}
-        />
-      </span>
+      <Icon
+        className={mergeClasses(
+          secondary ? 'icon-xs' : 'icon-sm',
+          isActive ? 'text-palette-blue11' : 'text-icon-tertiary'
+        )}
+      />
       {title}
-      {isExternal && <ArrowUpRightIcon className="icon-sm text-icon-secondary ml-auto" />}
+      {isExternal && <ArrowUpRightIcon className="icon-sm ml-auto text-icon-secondary" />}
     </A>
   );
 };
-
-const containerStyle = css({
-  ...typography.fontSizes[14],
-  minHeight: 38,
-  lineHeight: '100%',
-  padding: `${spacing[1]}px ${spacing[1]}px`,
-  color: theme.text.secondary,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  userSelect: 'none',
-  transition: 'color 150ms, opacity 150ms',
-  textDecoration: 'none',
-  borderRadius: borderRadius.md,
-  fontWeight: 500,
-  gap: spacing[2.5],
-
-  '&:hover': {
-    color: theme.text.default,
-    opacity: 1,
-  },
-});
-
-const secondaryContainerStyle = css({
-  fontWeight: 400,
-
-  '&:hover': {
-    color: theme.text.secondary,
-    opacity: 0.8,
-  },
-});
-
-const activeContainerStyle = css({
-  color: theme.text.link,
-
-  '&:hover': {
-    color: theme.text.link,
-  },
-});
-
-const iconWrapperStyle = css({
-  display: 'flex',
-  backgroundColor: theme.background.element,
-  width: spacing[6],
-  height: spacing[6],
-  borderRadius: borderRadius.sm,
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const activeIconWrapperStyle = css({
-  backgroundColor: theme.palette.blue4,
-});
-
-const secondaryIconWrapperStyle = css({
-  backgroundColor: 'transparent',
-});

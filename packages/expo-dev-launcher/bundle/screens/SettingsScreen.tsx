@@ -10,10 +10,9 @@ import {
   ShowMenuIcon,
   ThreeFingerPressIcon,
   CheckIcon,
-  TextInput,
 } from 'expo-dev-client-components';
 import * as React from 'react';
-import { ScrollView, Switch } from 'react-native';
+import { ScrollView, Switch, StyleSheet } from 'react-native';
 import { useQueryClient } from 'react-query';
 
 import { SafeAreaTop } from '../components/SafeAreaTop';
@@ -24,12 +23,12 @@ import { useBuildInfo } from '../providers/BuildInfoProvider';
 import { useDevMenuPreferences } from '../providers/DevMenuPreferencesProvider';
 import { useQueryOptions } from '../providers/QueryProvider';
 import { useToastStack } from '../providers/ToastStackProvider';
-import { useSetUpdatesConfig, useUpdatesConfig } from '../providers/UpdatesConfigProvider';
+import { useUpdatesConfig } from '../providers/UpdatesConfigProvider';
 import { useUser } from '../providers/UserContextProvider';
 
 export function SettingsScreen() {
   const { userData } = useUser();
-  const [clipboardError, setClipboardError] = React.useState('');
+  const [, setClipboardError] = React.useState('');
   const [clipboardContent, setClipboardContent] = React.useState('');
 
   const {
@@ -115,7 +114,7 @@ export function SettingsScreen() {
           </View>
 
           <View>
-            <Button.ScaleOnPressContainer
+            <Button.FadeOnPressContainer
               bg="default"
               roundedTop="large"
               roundedBottom="none"
@@ -130,11 +129,11 @@ export function SettingsScreen() {
                 <Spacer.Horizontal />
                 {motionGestureEnabled && <CheckIcon />}
               </Row>
-            </Button.ScaleOnPressContainer>
+            </Button.FadeOnPressContainer>
 
             <Divider />
 
-            <Button.ScaleOnPressContainer
+            <Button.FadeOnPressContainer
               bg="default"
               roundedBottom="large"
               roundedTop="none"
@@ -149,7 +148,7 @@ export function SettingsScreen() {
                 <Spacer.Horizontal />
                 {touchGestureEnabled && <CheckIcon />}
               </Row>
-            </Button.ScaleOnPressContainer>
+            </Button.FadeOnPressContainer>
           </View>
 
           <View padding="small">
@@ -171,10 +170,12 @@ export function SettingsScreen() {
             {Boolean(buildInfo.runtimeVersion) && (
               <>
                 <Divider />
-                <Row px="medium" py="small" align="center" bg="default">
+                <Row px="medium" py="small" bg="default">
                   <Text>Runtime Version</Text>
-                  <Spacer.Horizontal />
-                  <Text>{buildInfo.runtimeVersion}</Text>
+                  <Spacer.Horizontal size="small" />
+                  <Text style={styles.runtimeVersionText} ellipsizeMode="middle" numberOfLines={1}>
+                    {buildInfo.runtimeVersion}
+                  </Text>
                 </Row>
               </>
             )}
@@ -192,7 +193,7 @@ export function SettingsScreen() {
 
             <Divider />
 
-            <Button.ScaleOnPressContainer
+            <Button.FadeOnPressContainer
               onPress={onCopyPress}
               disabled={hasCopiedContent}
               bg="default"
@@ -203,7 +204,7 @@ export function SettingsScreen() {
                   {hasCopiedContent ? 'Copied to clipboard!' : 'Tap to Copy All'}
                 </Text>
               </Row>
-            </Button.ScaleOnPressContainer>
+            </Button.FadeOnPressContainer>
             {userData?.isExpoAdmin && (
               <>
                 <Spacer.Vertical size="medium" />
@@ -247,7 +248,7 @@ function DebugSettings() {
 
       <View>
         <View>
-          <Button.ScaleOnPressContainer
+          <Button.FadeOnPressContainer
             bg="default"
             roundedTop="large"
             roundedBottom="large"
@@ -258,7 +259,7 @@ function DebugSettings() {
               </Text>
               <Spacer.Horizontal />
             </Row>
-          </Button.ScaleOnPressContainer>
+          </Button.FadeOnPressContainer>
 
           <Spacer.Vertical size="large" />
 
@@ -280,7 +281,7 @@ function DebugSettings() {
 
               return (
                 <View key={pageSize}>
-                  <Button.ScaleOnPressContainer
+                  <Button.FadeOnPressContainer
                     bg="default"
                     roundedTop={isFirst ? 'large' : 'none'}
                     roundedBottom={isLast ? 'large' : 'none'}
@@ -293,7 +294,7 @@ function DebugSettings() {
                       <Spacer.Horizontal />
                       {isSelected && <CheckIcon />}
                     </Row>
-                  </Button.ScaleOnPressContainer>
+                  </Button.FadeOnPressContainer>
                   {!isLast && <Divider />}
                 </View>
               );
@@ -307,89 +308,25 @@ function DebugSettings() {
 
 function UpdatesDebugSettings() {
   const updatesConfig = useUpdatesConfig();
-  const defaultUpdatesConfig = React.useRef(updatesConfig).current;
-  const setUpdatesConfig = useSetUpdatesConfig();
-  const toastStack = useToastStack();
-
-  function onUrlChange({ nativeEvent: { text: appId } }) {
-    let appliedAppId = appId;
-    let usesEASUpdates = true;
-
-    if (appId.length === 0) {
-      appliedAppId = defaultUpdatesConfig.appId;
-      usesEASUpdates = false;
-    }
-
-    setUpdatesConfig({ appId, usesEASUpdates });
-    toastStack.push(() => <Toasts.Info>{`Updated appId to ${appliedAppId}`}</Toasts.Info>);
-  }
-
-  function onRuntimeVersionChange({ nativeEvent: { text: runtimeVersion } }) {
-    let appliedRuntimeVersion = runtimeVersion;
-
-    if (runtimeVersion.length === 0) {
-      appliedRuntimeVersion = defaultUpdatesConfig.runtimeVersion;
-    }
-
-    setUpdatesConfig({ runtimeVersion });
-    toastStack.push(() => (
-      <Toasts.Info>{`Updated runtimeVersion to ${appliedRuntimeVersion}`}</Toasts.Info>
-    ));
-  }
-
   return (
     <View my="medium">
       <View px="medium">
-        <Heading color="secondary">EAS Update Debug Settings</Heading>
-        <Spacer.Vertical size="medium" />
-      </View>
-
-      <View px="medium">
-        <Heading color="secondary">Current Settings</Heading>
+        <Heading color="secondary">EAS Update configuration</Heading>
         <Spacer.Vertical size="medium" />
       </View>
 
       <View bg="default" padding="medium" rounded="large">
-        <Text type="mono">{JSON.stringify(updatesConfig, null, 2)}</Text>
+        <Text type="mono" size="small">
+          {JSON.stringify(updatesConfig, null, 2)}
+        </Text>
       </View>
-
-      <Spacer.Vertical size="medium" />
-
-      <View px="medium">
-        <Heading size="small" color="secondary">
-          EAS Updates App ID
-        </Heading>
-        <Spacer.Vertical size="small" />
-      </View>
-
-      <View bg="default" rounded="large" py="small" px="small">
-        <TextInput
-          blurOnSubmit
-          autoCapitalize="none"
-          keyboardType="url"
-          placeholder="Set App Id"
-          defaultValue={updatesConfig?.appId ?? ''}
-          onSubmitEditing={onUrlChange}
-        />
-      </View>
-      <Spacer.Vertical size="small" />
-      <View px="medium">
-        <Heading size="small" color="secondary">
-          Runtime Version
-        </Heading>
-      </View>
-      <View bg="default" rounded="large" py="small" px="small">
-        <TextInput
-          blurOnSubmit
-          autoCapitalize="none"
-          keyboardType="url"
-          placeholder="Set Runtime Version"
-          defaultValue={updatesConfig?.runtimeVersion ?? ''}
-          onSubmitEditing={onRuntimeVersionChange}
-        />
-      </View>
-
-      <Spacer.Vertical size="large" />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  runtimeVersionText: {
+    flex: 1,
+    textAlign: 'right',
+  },
+});

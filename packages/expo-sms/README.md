@@ -11,8 +11,8 @@ Provides access to the system's UI/app for sending SMS messages.
 
 # API documentation
 
-- [Documentation for the main branch](https://github.com/expo/expo/blob/main/docs/pages/versions/unversioned/sdk/sms.mdx)
 - [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/sms/)
+- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/sms/)
 
 # Installation in managed Expo projects
 
@@ -25,16 +25,16 @@ For bare React Native projects, you must ensure that you have [installed and con
 ### Add the package to your npm dependencies
 
 ```
-expo install expo-sms
+npx expo install expo-sms
 ```
-
-### Configure for iOS
-
-Run `npx pod-install` after installing the npm package.
 
 ### Configure for Android
 
 No additional set up necessary.
+
+### Configure for iOS
+
+Run `npx pod-install` after installing the npm package.
 
 # Contributing
 

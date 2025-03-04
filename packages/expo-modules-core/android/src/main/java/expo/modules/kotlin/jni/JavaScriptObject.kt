@@ -10,11 +10,6 @@ import expo.modules.core.interfaces.DoNotStrip
 @Suppress("KotlinJniMissingFunction")
 @DoNotStrip
 open class JavaScriptObject @DoNotStrip internal constructor(@DoNotStrip private val mHybridData: HybridData) : Destructible {
-  init {
-    @Suppress("LeakingThis")
-    JNIDeallocator.addReference(this)
-  }
-
   /**
    * The property descriptor options for the property being defined or modified.
    */
@@ -32,7 +27,7 @@ open class JavaScriptObject @DoNotStrip internal constructor(@DoNotStrip private
     /**
      * If set, the value associated with the property may be changed with an assignment operator.
      */
-    Writable(1 shl 2),
+    Writable(1 shl 2)
   }
 
   fun isValid() = mHybridData.isValid
@@ -40,7 +35,17 @@ open class JavaScriptObject @DoNotStrip internal constructor(@DoNotStrip private
   external fun hasProperty(name: String): Boolean
   external fun getProperty(name: String): JavaScriptValue
 
+  operator fun get(name: String): JavaScriptValue? {
+    if (hasProperty(name)) {
+      return getProperty(name)
+    }
+    return null
+  }
+
   external fun getPropertyNames(): Array<String>
+
+  external fun createWeak(): JavaScriptWeakObject
+
   private external fun setBoolProperty(name: String, value: Boolean)
   private external fun setDoubleProperty(name: String, value: Double)
   private external fun setStringProperty(name: String, value: String?)
@@ -63,16 +68,30 @@ open class JavaScriptObject @DoNotStrip internal constructor(@DoNotStrip private
     }
   }
 
+  external fun setExternalMemoryPressure(size: Int)
+
   fun setProperty(name: String, value: Boolean) = setBoolProperty(name, value)
+  operator fun set(name: String, value: Boolean) = setBoolProperty(name, value)
+
   fun setProperty(name: String, value: Int) = setDoubleProperty(name, value.toDouble())
+  operator fun set(name: String, value: Int) = setDoubleProperty(name, value.toDouble())
+
   fun setProperty(name: String, value: Double) = setDoubleProperty(name, value)
+  operator fun set(name: String, value: Double) = setDoubleProperty(name, value)
+
   fun setProperty(name: String, value: String?) = setStringProperty(name, value)
+  operator fun set(name: String, value: String?) = setStringProperty(name, value)
+
   fun setProperty(name: String, value: JavaScriptValue?) = setJSValueProperty(name, value)
+  operator fun set(name: String, value: JavaScriptValue?) = setJSValueProperty(name, value)
+
   fun setProperty(name: String, value: JavaScriptObject?) = setJSObjectProperty(name, value)
+  operator fun set(name: String, value: JavaScriptObject?) = setJSObjectProperty(name, value)
 
   // Needed to handle untyped null value
   // Without it setProperty(name, null) won't work
-  fun setProperty(name: String, `null`: Nothing?) = unsetProperty(name)
+  fun setProperty(name: String, @Suppress("UNUSED_PARAMETER") `null`: Nothing?) = unsetProperty(name)
+  operator fun set(name: String, @Suppress("UNUSED_PARAMETER") `null`: Nothing?) = unsetProperty(name)
 
   fun defineProperty(
     name: String,
@@ -113,7 +132,7 @@ open class JavaScriptObject @DoNotStrip internal constructor(@DoNotStrip private
   // Needed to handle untyped null value
   fun defineProperty(
     name: String,
-    `null`: Nothing?,
+    @Suppress("UNUSED_PARAMETER") `null`: Nothing?,
     options: List<PropertyDescriptor> = emptyList()
   ) = defineJSObjectProperty(name, null, options.toCppOptions())
 

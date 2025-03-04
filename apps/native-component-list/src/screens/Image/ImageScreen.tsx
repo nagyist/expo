@@ -13,6 +13,14 @@ export const ImageScreens = [
     },
   },
   {
+    name: 'Animated styles',
+    route: 'image/animated-styles',
+    options: {},
+    getComponent() {
+      return optionalRequire(() => require('./ImageAnimatedStyles'));
+    },
+  },
+  {
     name: 'List with thousands images',
     route: 'image/flashlist',
     options: {},
@@ -63,10 +71,45 @@ export const ImageScreens = [
     },
   },
   {
+    name: 'Rendering a shared ref',
+    route: 'image/shared-ref',
+    getComponent() {
+      return optionalRequire(() => require('./ImageSharedRefScreen'));
+    },
+  },
+  {
+    name: 'Rendering a shared ref from ImageManipulator',
+    route: 'image/shared-ref-from-manipulator',
+    getComponent() {
+      return optionalRequire(() => require('./ImageSharedRefFromManipulator'));
+    },
+  },
+  {
+    name: 'Background',
+    route: 'image/background',
+    getComponent() {
+      return optionalRequire(() => require('./ImageBackgroundScreen'));
+    },
+  },
+  {
+    name: 'Static responsiveness using srcSet',
+    route: 'image/srcset',
+    getComponent() {
+      return optionalRequire(() => require('./ImageSrcSetScreen'));
+    },
+  },
+  {
     name: 'Transitions',
     route: 'image/transitions',
     getComponent() {
       return optionalRequire(() => require('./ImageTransitionsScreen'));
+    },
+  },
+  {
+    name: 'Tinting',
+    route: 'image/tinting',
+    getComponent() {
+      return optionalRequire(() => require('./ImageTintingScreen'));
     },
   },
   {
@@ -88,6 +131,13 @@ export const ImageScreens = [
     route: 'image/gifs',
     getComponent() {
       return optionalRequire(() => require('./ImageGifsScreen'));
+    },
+  },
+  {
+    name: 'MediaLibrary and ImagePicker integration',
+    route: 'image/media-library',
+    getComponent() {
+      return optionalRequire(() => require('./ImageMediaLibraryScreen'));
     },
   },
 ];
