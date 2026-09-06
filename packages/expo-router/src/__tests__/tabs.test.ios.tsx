@@ -2,7 +2,7 @@ import { fireEvent, act, screen } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 
 import { router } from '../exports';
-import { store } from '../global-state/router-store';
+import { navigationRef } from '../global-state/navigationRef';
 import { useLocalSearchParams, useSegments } from '../hooks';
 import { Stack } from '../layouts/Stack';
 import { Tabs } from '../layouts/Tabs';
@@ -390,7 +390,7 @@ it('can use replace navigation', () => {
   act(() => router.replace('/two'));
   expect(screen.getByTestId('two')).toBeVisible();
   expect(screen.getByLabelText('two, tab, 2 of 2')).toBeVisible();
-  expect(store.state).toStrictEqual({
+  expect(navigationRef.getRootState()).toStrictEqual({
     index: 0,
     key: expect.any(String),
     routeNames: ['__root', '+not-found', '_sitemap'],
@@ -398,7 +398,6 @@ it('can use replace navigation', () => {
       {
         key: expect.any(String),
         name: '__root',
-        params: undefined,
         state: {
           history: [
             {
@@ -413,7 +412,6 @@ it('can use replace navigation', () => {
             {
               key: expect.any(String),
               name: 'one',
-              params: undefined,
               path: '/one',
             },
             {
@@ -423,12 +421,13 @@ it('can use replace navigation', () => {
             },
           ],
           stale: false,
+          routeKeySeq: expect.any(Number),
           type: 'tab',
         },
       },
     ],
     stale: false,
-    type: 'stack',
+    routeKeySeq: expect.any(Number),
   });
 });
 

@@ -78,6 +78,7 @@ const Nav = unstable_createStandardRouterNavigator<
 
 type TypelessNavigationState = Readonly<{
   key: string;
+  routeKeySeq: number;
   index: number;
   routeNames: string[];
   routes: { key: string; name: string; params?: object }[];
@@ -89,28 +90,23 @@ const TypelessRouter: RouterFactory<
   NavigationAction,
   DefaultRouterOptions
 > = () => ({
-  getInitialState: () => {
-    throw new Error('Type test only');
-  },
-  getRehydratedState: () => {
-    throw new Error('Type test only');
-  },
   getStateForDeclaredRoutes: (state) => state,
   getStateForRouteFocus: (state) => state,
-  getStateForAction: (state) => state,
+  getStateForAction: (state) => ({
+    state,
+    affectedRouteKey: state.routes[state.index]?.key,
+  }),
   shouldActionChangeFocus: () => false,
 });
 
 unstable_createStandardRouterNavigator(Content, TypelessRouter);
 
-// A router may omit `type` only when its state has none. A router whose state declares a literal
-// type must still declare the same literal, otherwise every state it produces would be rejected
-// by the rehydration check and replaced with a fresh initial state.
+// A router may omit `type` only when its state has none.
 export type _BaseRouterTypeIsOptional = Expect<
   Equal<Pick<Router<NavigationState, NavigationAction>, 'type'>, { type?: string }>
 >;
-export type _TypedRouterTypeIsRequired = Expect<
-  Equal<Pick<Router<TabNavigationState<ParamListBase>, NavigationAction>, 'type'>, { type: 'tab' }>
+export type _TypedRouterTypeIsOptional = Expect<
+  Equal<Pick<Router<TabNavigationState<ParamListBase>, NavigationAction>, 'type'>, { type?: 'tab' }>
 >;
 
 export type _HasScreen = Expect<Equal<typeof Nav extends { Screen: unknown } ? true : false, true>>;

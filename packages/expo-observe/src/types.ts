@@ -76,7 +76,9 @@ export type ObserveConfig = {
    */
   errorHandlingEnabled?: boolean;
   /**
-   * Opt in to per-integration behavior.
+   * Opt in to per-integration behavior. See the [Expo Router](/eas/observe/integrations/expo-router/)
+   * and [React Navigation](/eas/observe/integrations/react-navigation/) integrations, or
+   * [integrate your own package](/eas/observe/integrations/third-party/).
    */
   integrations?: ObserveIntegrationsConfig;
 };
@@ -130,9 +132,66 @@ export type ObserveModuleEvents = {
 };
 
 export declare class ObserveModule extends NativeModule<ObserveModuleEvents> {
+  /**
+   * The EAS client id: a random, pseudonymous identifier for this app installation, shared by all
+   * EAS client libraries. Observe records it on every metric and log event as the
+   * `expo.eas_client.id` attribute, so use it to correlate Observe data with another service.
+   *
+   * The id is stored in native preferences and is stable across app launches and app updates. It
+   * changes when the app's data is cleared or the app is reinstalled, although a backup restore
+   * can carry the previous id over. It identifies an installation, not a user or a device.
+   *
+   * `null` on web, where there is no EAS client id.
+   *
+   * @example
+   * ```ts
+   * import { Observe } from 'expo-observe';
+   *
+   * // Attach the same id to data you send elsewhere to line it up with Observe.
+   * await fetch('https://example.com/events', {
+   *   method: 'POST',
+   *   body: JSON.stringify({ easClientId: Observe.clientId }),
+   * });
+   * ```
+   *
+   * @platform android
+   * @platform ios
+   */
+  readonly clientId: string | null;
+  /**
+   * Dispatches pending events to the server immediately.
+   *
+   * Events are dispatched automatically when the app moves to the background. On Android,
+   * a background worker dispatches events once network connectivity is available. On iOS,
+   * dispatching happens when the app resigns active state or is about to terminate. Call
+   * this method to flush events manually, for example, during testing or to ensure events
+   * are sent before a specific point.
+   *
+   * @returns A promise that resolves when the pending events have been dispatched.
+   *
+   * @example
+   * ```ts
+   * import { Observe } from 'expo-observe';
+   *
+   * await Observe.dispatchEvents();
+   * ```
+   */
   dispatchEvents(): Promise<void>;
   /**
-   * Configures observability settings.
+   * Configures how observability events are collected and dispatched at runtime, such as
+   * the environment label, dispatching behavior, sampling, and integrations.
+   *
+   * @param config Observability settings to apply.
+   *
+   * @example
+   * ```ts
+   * import { Observe } from 'expo-observe';
+   *
+   * Observe.configure({
+   *   environment: 'production',
+   *   dispatchingEnabled: true,
+   * });
+   * ```
    */
   configure(config: ObserveConfig): void;
   /**
